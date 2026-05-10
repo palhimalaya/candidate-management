@@ -7,7 +7,7 @@ from app.schemas import (
     CandidateUpdateSchema,
 )
 from sqlalchemy.orm import Session
-from sqlalchemy import or_, select
+from sqlalchemy import or_, select, cast, String, func
 from datetime import datetime
 from app.models import Score
 import asyncio
@@ -59,10 +59,12 @@ def list_candidates(
         query = query.filter(Candidate.status == status)
 
     if role_applied:
-        query = query.filter(Candidate.role_applied == role_applied)
-    
+        role_search = f"%{role_applied.strip()}%"
+        query = query.filter(Candidate.role_applied.ilike(role_search))
+
     if skill:
-        query = query.filter(Candidate.skills.contains(skill))
+        skill_search = f"%{skill.strip()}%"
+        query = query.filter(cast(Candidate.skills, String).ilike(skill_search))
 
     if keyword:
         search = f"%{keyword}%"

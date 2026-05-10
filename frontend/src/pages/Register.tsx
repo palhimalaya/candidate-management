@@ -32,7 +32,7 @@ export function Register() {
     try {
       await authAPI.register(name, email, password);
       setSuccess(true);
-      setTimeout(() => navigate('/login'), 2000);
+      navigate('/login');
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Registration failed. Please try again.');
     } finally {

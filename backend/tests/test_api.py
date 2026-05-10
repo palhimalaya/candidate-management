@@ -1,8 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy.orm import Session
 from app.main import app
-from app.database import get_db
+from app.database import get_db, SessionLocal
 from app.models import Base, User, Candidate, Score, UserRole
 from app.auth import hash_password
 import asyncio
@@ -16,8 +15,8 @@ def client():
     Base.metadata.create_all(bind=engine)
 
     def override_get_db():
+        db = SessionLocal()
         try:
-            db = Session(bind=engine)
             yield db
         finally:
             db.close()
@@ -33,8 +32,11 @@ def client():
 
 @pytest.fixture
 def test_db(client):
-    from app.database import Session
-    return Session(bind=app.dependency_overrides[get_db]().__enter__())
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 @pytest.fixture
@@ -317,9 +319,12 @@ def test_soft_delete_not_hard_delete(client, admin_token, test_db):
 
     assert response.status_code == 200
 
-    from app.database import Session
-    db = Session(bind=app.dependency_overrides[get_db]().__enter__())
-    deleted_candidate = db.query(Candidate).filter(Candidate.id == candidate_id).first()
+    from app.database import SessionLocal
+    db = SessionLocal()
+    try:
+        deleted_candidate = db.query(Candidate).filter(Candidate.id == candidate_id).first()
+    finally:
+        db.close()
 
     assert deleted_candidate is not None
     assert deleted_candidate.deleted_at is not None

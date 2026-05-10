@@ -6,6 +6,7 @@ from typing import Optional
 from app.models import CandidateStatus, User, UserRole
 from app.schemas import (
     CandidateCreateSchema,
+    CandidateApiResponseSchema,
     CandidateListResponseSchema,
     CandidateResponseSchema,
     CandidateUpdateSchema,
@@ -19,13 +20,13 @@ from app.models import Score
 router = APIRouter(prefix="/candidates", tags=["candidates"])
 
 
-@router.post("/", response_model=CandidateResponseSchema)
+@router.post("/", response_model=CandidateApiResponseSchema)
 def create_candidate(
     candidate_data: CandidateCreateSchema,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_admin),
 ):
-    return candidate_service.create_candidate(db, candidate_data)
+    return candidate_service.create_candidate(candidate_data, db)
 
 
 @router.get("/", response_model=CandidateListResponseSchema)

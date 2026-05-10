@@ -90,3 +90,43 @@ class CandidateListDataSchema(BaseModel):
 class CandidateListResponseSchema(BaseModel):
     message: str
     data: CandidateListDataSchema
+
+
+class ScoreCreateSchema(BaseModel):
+    category: str
+    score: int
+    note: Optional[str] = None
+
+
+class ScoreResponseSchema(BaseModel):
+    id: int
+    category: str
+    score: int
+    note: Optional[str]
+    reviewer_id: int
+    reviewer_name: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class CandidateDetailResponseSchema(BaseModel):
+    id: int
+    name: str
+    email: EmailStr
+    role_applied: str
+    status: CandidateStatus
+    skills: List[str]
+    internal_notes: Optional[str]
+    ai_summary: Optional[str]
+    created_at: datetime
+    scores: List[ScoreResponseSchema]
+
+    class Config:
+        from_attributes = True
+
+
+class CandidateDetailApiResponseSchema(BaseModel):
+    message: str
+    data: CandidateDetailResponseSchema

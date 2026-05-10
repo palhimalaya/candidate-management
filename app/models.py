@@ -120,6 +120,11 @@ class Candidate(Base):
         nullable=True,
     )
 
+    ai_summary = Column(
+        Text,
+        nullable=True,
+    )
+
     scores = relationship(
         "Score",
         back_populates="candidate",

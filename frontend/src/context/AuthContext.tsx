@@ -1,53 +1,97 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../types';
+import api from '../services/api';
+import { authAPI } from '../services/api';
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  checkAuth: () => Promise<void>;
+  isAuthReady: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function loadSavedUser(): User | null {
+  const saved = localStorage.getItem('user');
+
+  if (!saved) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(saved) as User;
+  } catch (error) {
+    localStorage.removeItem('user');
+    return null;
+  }
+}
+
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(() => {
-    const saved = localStorage.getItem('user');
-    return saved ? JSON.parse(saved) : null;
-  });
-  const [token, setToken] = useState<string | null>(() => {
-    return localStorage.getItem('token');
-  });
+  const [user, setUser] = useState<User | null>(() => loadSavedUser());
+  const [isAuthReady, setIsAuthReady] = useState(false);
 
-  const login = async (email: string, password: string) => {
-    const { authAPI } = await import('../services/api');
-    const response = await authAPI.login(email, password);
-    const { access_token, user: userData } = response.data.data;
+  const checkAuth = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setUser(null);
+      return;
+    }
 
-    setToken(access_token);
-    setUser(userData);
-    localStorage.setItem('token', access_token);
-    localStorage.setItem('user', JSON.stringify(userData));
+    try {
+      const response = await api.get('/auth/me');
+      const userData = response.data?.data ?? response.data;
+      setUser(userData);
+      localStorage.setItem('user', JSON.stringify(userData));
+    } catch (error) {
+      setUser(null);
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+    }
   };
 
-  const logout = () => {
-    setToken(null);
-    setUser(null);
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+  useEffect(() => {
+    const initializeAuth = async () => {
+      await checkAuth();
+      setIsAuthReady(true);
+    };
+
+    void initializeAuth();
+  }, []);
+
+  const login = async (email: string, password: string) => {
+    const response = await authAPI.login(email, password);
+    const { access_token, user: userData } = response.data.data;
+    localStorage.setItem('token', access_token);
+    localStorage.setItem('user', JSON.stringify(userData));
+    setUser(userData);
+  };
+
+  const logout = async () => {
+    try {
+      await authAPI.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setUser(null);
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+    }
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        token,
         login,
         logout,
-        isAuthenticated: !!token,
+        isAuthenticated: !!user,
         isAdmin: user?.role === 'admin',
+        checkAuth,
+        isAuthReady,
       }}
     >
       {children}

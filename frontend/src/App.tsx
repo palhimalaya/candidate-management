@@ -1,12 +1,20 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Header } from './components/Header';
+import { LoadingSpinner } from './components/LoadingSpinner';
 import { Login } from './pages/Login';
+import { Register } from './pages/Register';
 import { CandidateList } from './pages/CandidateList';
 import { CandidateDetail } from './pages/CandidateDetail';
+import { NotFound } from './pages/NotFound';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isAuthReady } = useAuth();
+
+  if (!isAuthReady) {
+    return <LoadingSpinner />;
+  }
+
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
 }
 
@@ -31,6 +39,10 @@ function App() {
             element={<Login />}
           />
           <Route
+            path="/register"
+            element={<Register />}
+          />
+          <Route
             path="/"
             element={
               <ProtectedRoute>
@@ -50,6 +62,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

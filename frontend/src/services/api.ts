@@ -23,6 +23,8 @@ export const authAPI = {
 
   register: (name: string, email: string, password: string) =>
     api.post('/auth/register', { name, email, password }),
+
+  logout: () => api.post('/auth/logout'),
 };
 
 export const candidatesAPI = {
@@ -44,7 +46,11 @@ export const candidatesAPI = {
 
   streamUpdates: (id: number) => {
     const token = localStorage.getItem('token');
-    return new EventSource(`${API_BASE_URL}/candidates/${id}/stream?token=${token}`);
+    const url = new URL(`${API_BASE_URL}/candidates/${id}/stream`);
+    if (token) {
+      url.searchParams.set('token', token);
+    }
+    return new EventSource(url.toString());
   },
 };
 

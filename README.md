@@ -139,6 +139,80 @@ Tests cover:
 - Pagination and filtering
 - Soft delete behavior
 
+## Example API calls (curl commands)
+
+Replace <TOKEN> with the `access_token` value returned from the login endpoint.
+
+Register a new user (creates a reviewer role):
+
+```bash
+curl -X POST "http://localhost:8000/auth/register" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"New User","email":"new.user@example.com","password":"password123"}'
+```
+
+Login and retrieve access token:
+
+```bash
+curl -X POST "http://localhost:8000/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@techkraft.com","password":"admin123"}'
+```
+
+Get current user info (use token):
+
+```bash
+curl "http://localhost:8000/auth/me" \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+List candidates (with optional query params):
+
+```bash
+curl "http://localhost:8000/candidates?page=1&page_size=10&keyword=engineer" \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+Get candidate details:
+
+```bash
+curl "http://localhost:8000/candidates/1" \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+Create a candidate (admin only):
+
+```bash
+curl -X POST "http://localhost:8000/candidates" \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Alice","email":"alice@example.com","role_applied":"Backend Engineer","skills":["python","sql"]}'
+```
+
+Create a score for a candidate:
+
+```bash
+curl -X POST "http://localhost:8000/candidates/1/scores" \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"category":"communication","score":8,"note":"Clear answers"}'
+```
+
+Generate an AI summary for a candidate:
+
+```bash
+curl -X POST "http://localhost:8000/candidates/1/summary" \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+Open a streaming connection (SSE) to receive candidate score updates:
+
+```bash
+curl -N -H "Accept: text/event-stream" \
+  -H "Authorization: Bearer <TOKEN>" \
+  "http://localhost:8000/candidates/1/stream"
+```
+
 ## Architecture Decision Records (ADR)
 
 ### ADR-001: FastAPI over Other Frameworks
